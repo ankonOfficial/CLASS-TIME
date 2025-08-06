@@ -112,6 +112,7 @@
         .contact-form-body {
             padding: 2.5rem;
             overflow-y: auto;
+            position: relative; /* Ensure relative positioning for absolute child */
         }
 
         .input-field {
@@ -640,12 +641,13 @@
             <div class="contact-form-header">
                 Sent Message Ankon
             </div>
-            <div class="contact-form-body" style="position: relative;"> <!-- Added position:relative for success message positioning -->
+            <div class="contact-form-body">
                 <script>
                 var submitted=false
                 </script>
-                <iframe name="hiddenConfirm" id="hiddenConfirm" style="display:none;" onload="if(submitted){ showSuccessMessage(); resetForm(); }"> </iframe>
-                <form id="contactForm" action="https://docs.google.com/forms/d/e/1FAIpQLSfHm0l7XJNpn7L9iOVTGNyvH2zIhxiuDdciKo5xSzHZazc3Eg/formResponse" method="POST" target="hiddenConfirm" onsubmit="submitted=true">
+                <!-- Removed onload from iframe to prevent cross-origin issues -->
+                <iframe name="hiddenConfirm" id="hiddenConfirm" style="display:none;"> </iframe>
+                <form id="contactForm" action="https://docs.google.com/forms/d/e/1FAIpQLSfHm0l7XJNpn7L9iOVTGNyvH2zIhxiuDdciKo5xSzHZazc3Eg/formResponse" method="POST" target="hiddenConfirm" onsubmit="submitted=true; showSuccessMessage(); resetForm(); return true;">
                     <div class="input-field">
                         <label for="name">Name</label>
                         <input type="text" id="name" name="entry.1127051324" placeholder="Enter your name" required>
@@ -663,7 +665,7 @@
                     <button type="submit" class="contact-form-button">Submit</button>
                 </form>
                 <div id="success-message" class="success-message" style="display:none;">
-                    Message sent successfully! Thank you.
+                    Thank you for messaging me!
                 </div>
             </div>
         </div>
@@ -680,15 +682,28 @@
     </button>
 
     <script>
+        // Function to show success message (now global)
+        function showSuccessMessage() {
+            const successMessage = document.getElementById('success-message');
+            successMessage.style.display = 'block';
+            setTimeout(() => {
+                successMessage.style.display = 'none';
+            }, 5000); // Message visible for 5 seconds
+        }
+
+        // Function to reset the form (now global)
+        function resetForm() {
+            const contactForm = document.getElementById('contactForm');
+            contactForm.reset();
+        }
+
         document.addEventListener('DOMContentLoaded', () => {
             const scheduleSection = document.getElementById('schedule-section');
             const contactFormSection = document.getElementById('contact-form-section');
             const toggleViewButton = document.getElementById('toggle-view-button');
             const darkModeToggle = document.getElementById('dark-mode-toggle');
             const body = document.body;
-            const contactForm = document.getElementById('contactForm');
-            const successMessage = document.getElementById('success-message');
-
+            
             // Function to set the theme based on localStorage or system preference
             function setInitialTheme() {
                 const savedTheme = localStorage.getItem('theme');
@@ -700,20 +715,6 @@
                     // Default to system preference if no saved theme
                     body.classList.add('dark-mode');
                 }
-            }
-
-            // Function to show success message
-            function showSuccessMessage() {
-                successMessage.style.display = 'block';
-                // Hide message after a few seconds
-                setTimeout(() => {
-                    successMessage.style.display = 'none';
-                }, 5000);
-            }
-
-            // Function to reset the form
-            function resetForm() {
-                contactForm.reset();
             }
 
             // Set initial theme on load
@@ -731,7 +732,7 @@
                     setTimeout(() => {
                         contactFormSection.style.display = 'none';
                         scheduleSection.style.display = 'block';
-                    }, 400);
+                    }, 400); // Match CSS transition duration
                     toggleViewButton.textContent = 'Contact Ankon';
                 }
             });
