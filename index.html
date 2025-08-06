@@ -647,7 +647,7 @@
                 </script>
                 <!-- Removed onload from iframe to prevent cross-origin issues -->
                 <iframe name="hiddenConfirm" id="hiddenConfirm" style="display:none;"> </iframe>
-                <form id="contactForm" action="https://docs.google.com/forms/d/e/1FAIpQLSfHm0l7XJNpn7L9iOVTGNyvH2zIhxiuDdciKo5xSzHZazc3Eg/formResponse" method="POST" target="hiddenConfirm" onsubmit="submitted=true; showSuccessMessage(); resetForm(); return true;">
+                <form id="contactForm" action="https://docs.google.com/forms/d/e/1FAIpQLSfHm0l7XJNpn7L9iOVTGNyvH2zIhxiuDdciKo5xSzHZazc3Eg/formResponse" method="POST" target="hiddenConfirm" onsubmit="submitted=true; showSuccessMessageAndReturnToSchedule(); return true;">
                     <div class="input-field">
                         <label for="name">Name</label>
                         <input type="text" id="name" name="entry.1127051324" placeholder="Enter your name" required>
@@ -682,19 +682,28 @@
     </button>
 
     <script>
-        // Function to show success message (now global)
-        function showSuccessMessage() {
+        // Function to show success message and then return to schedule
+        function showSuccessMessageAndReturnToSchedule() {
             const successMessage = document.getElementById('success-message');
+            const contactForm = document.getElementById('contactForm');
+            const scheduleSection = document.getElementById('schedule-section');
+            const contactFormSection = document.getElementById('contact-form-section');
+            const toggleViewButton = document.getElementById('toggle-view-button');
+
+            // Show success message
             successMessage.style.display = 'block';
+            contactForm.reset(); // Reset form immediately
+
+            // After 2 seconds, hide message and switch back to schedule
             setTimeout(() => {
                 successMessage.style.display = 'none';
-            }, 5000); // Message visible for 5 seconds
-        }
-
-        // Function to reset the form (now global)
-        function resetForm() {
-            const contactForm = document.getElementById('contactForm');
-            contactForm.reset();
+                contactFormSection.classList.remove('active');
+                setTimeout(() => {
+                    contactFormSection.style.display = 'none';
+                    scheduleSection.style.display = 'block';
+                    toggleViewButton.textContent = 'Contact Ankon'; // Reset button text
+                }, 400); // Match CSS transition duration for form hide
+            }, 2000); // Message visible for 2 seconds
         }
 
         document.addEventListener('DOMContentLoaded', () => {
