@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Class Schedule & Contact Ankon</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        /* CSS Variables for theming */
+        :root {
+            /* Light Mode Colors */
+            --bg-primary: #f8f9fa;
+            --bg-secondary: #ffffff;
+            --text-primary: #212529;
+            --text-secondary: #495057;
+            --border-color: #e9ecef;
+            --header-bg-light: linear-gradient(135deg, #4a90e2, #2c7ad6); /* Blue gradient */
+            --header-bg-dark: linear-gradient(135deg, #1e3a8a, #1a202c); /* Darker blue gradient */
+            --accent-green: linear-gradient(135deg, #28a745, #218838); /* Green for toggle */
+            --accent-red: linear-gradient(135deg, #dc3545, #c82333); /* Red for form button */
+            --card-bg: #f0f4f7;
+            --table-header-bg: #e9ecef;
+            --table-row-even: #f8f9fa;
+            --table-row-hover: #e2e6ea;
+            --input-bg: #f8f9fa;
+            --input-border: #ced4da;
+            --input-text: #212529;
+            --footer-bg: #343a40;
+            --footer-text: #f8f9fa;
+            --section-heading-line: #4a90e2;
+        }
+
+        /* Dark Mode Overrides */
+        body.dark-mode {
+            --bg-primary: #1a202c;
+            --bg-secondary: #2d3748;
+            --text-primary: #e2e8f0;
+            --text-secondary: #a0aec0;
+            --border-color: #4a5568;
+            --header-bg-light: linear-gradient(135deg, #1a202c, #2d3748); /* Dark background for header */
+            --header-bg-dark: linear-gradient(135deg, #1a202c, #2d3748); /* Dark background for header */
+            --accent-green: linear-gradient(135deg, #10b981, #059669); /* Brighter green for toggle */
+            --accent-red: linear-gradient(135deg, #ef4444, #b91c1c); /* Brighter red for form button */
+            --card-bg: #2a3544;
+            --table-header-bg: #2d3748;
+            --table-row-even: #2a3544;
+            --table-row-hover: #3a455a;
+            --input-bg: #2d3748;
+            --input-border: #4a5568;
+            --input-text: #e2e8f0;
+            --footer-bg: #1a202c;
+            --footer-text: #a0aec0;
+            --section-heading-line: #63b3ed;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        .main-content-wrapper {
+            flex-grow: 1;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            padding: 2.5rem;
+        }
+
+        .card-base {
+            background-color: var(--bg-secondary);
+            border-radius: 1rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15); /* Stronger shadow */
+            overflow: hidden;
+            width: 100%;
+            max-width: 1000px;
+            transition: all 0.4s ease-out;
+            border: 1px solid var(--border-color);
+        }
+
+        /* Contact Form Specific Styles */
+        .contact-form-container {
+            background: var(--bg-secondary); /* Use secondary background for form */
+            color: var(--text-primary);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+            max-width: 550px;
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        .contact-form-container.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .contact-form-header {
+            background: var(--accent-red);
+            color: white;
+            padding: 1.75rem;
+            font-size: 2rem;
+            font-weight: 800;
+            text-align: center;
+            box-shadow: inset 0 -3px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .contact-form-body {
+            padding: 2.5rem;
+            overflow-y: auto;
+        }
+
+        .input-field {
+            margin-bottom: 1.75rem;
+            text-align: left;
+        }
+
+        .input-field label {
+            display: block;
+            margin-bottom: 0.6rem;
+            font-size: 1.05rem;
+            color: var(--text-secondary);
+            font-weight: 600;
+        }
+
+        .input-field input,
+        .input-field textarea {
+            width: 100%;
+            padding: 1rem 1.25rem;
+            border: 1px solid var(--input-border);
+            border-radius: 0.6rem;
+            background: var(--input-bg);
+            color: var(--input-text);
+            font-size: 1rem;
+            box-shadow: inset 0 1px 4px rgba(0, 0, 0, 0.05);
+            transition: all 0.2s ease-in-out;
+        }
+
+        .input-field input:focus,
+        .input-field textarea:focus {
+            background: var(--input-bg); /* Keep same background on focus */
+            outline: none;
+            border-color: var(--accent-red); /* Use accent red for focus border */
+            box-shadow: 0 0 0 4px rgba(220, 53, 69, 0.3);
+        }
+
+        .contact-form-button {
+            background: var(--accent-red);
+            color: white;
+            border: none;
+            border-radius: 0.75rem;
+            padding: 1.1rem 2.5rem;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+            font-weight: 700;
+            margin-top: 2rem;
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.3);
+            letter-spacing: 0.05em;
+        }
+
+        .contact-form-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+            opacity: 0.9; /* Slight opacity change on hover */
+        }
+
+        /* Toggle Buttons for View & Dark Mode */
+        .toggle-button {
+            position: fixed;
+            bottom: 30px;
+            padding: 1rem 1.75rem;
+            border-radius: 50px;
+            font-size: 1.15rem;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
+            z-index: 1001;
+            border: none;
+            outline: none;
+            letter-spacing: 0.025em;
+            color: white;
+        }
+
+        .toggle-button:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+            opacity: 0.9;
+        }
+
+        #toggle-view-button {
+            right: 30px;
+            background: var(--accent-green);
+        }
+
+        #dark-mode-toggle {
+            left: 30px;
+            background: linear-gradient(135deg, #6c757d, #495057); /* Gray gradient for dark mode toggle */
+        }
+        body.dark-mode #dark-mode-toggle {
+            background: linear-gradient(135deg, #6366f1, #4f46e5); /* Purple gradient in dark mode */
+        }
+
+
+        /* Initial state for schedule and form */
+        #schedule-section {
+            display: block;
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        #contact-form-section {
+            display: none;
+        }
+
+        /* Schedule specific styles */
+        .schedule-header {
+            background: var(--header-bg-light);
+            color: white;
+            padding: 2rem;
+            border-top-left-radius: 1rem;
+            border-top-right-radius: 1rem;
+            box-shadow: inset 0 -3px 8px rgba(0, 0, 0, 0.2);
+            transition: background 0.3s ease;
+        }
+        body.dark-mode .schedule-header {
+            background: var(--header-bg-dark);
+        }
+
+        .schedule-header h1 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin-bottom: 0.5rem;
+        }
+
+        .schedule-header p {
+            font-size: 1.15rem;
+            opacity: 0.9;
+        }
+
+        .schedule-main {
+            padding: 2.5rem;
+        }
+
+        .section-heading {
+            font-size: 2.25rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 1.75rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 3px solid var(--border-color);
+            position: relative;
+            transition: color 0.3s ease, border-color 0.3s ease;
+        }
+        .section-heading::after {
+            content: '';
+            position: absolute;
+            bottom: -3px;
+            left: 0;
+            width: 60px;
+            height: 3px;
+            background-color: var(--section-heading-line);
+            transition: background-color 0.3s ease;
+        }
+
+        /* Table styling */
+        .schedule-table-wrapper {
+            border-radius: 0.75rem;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+            border: 1px solid var(--border-color);
+            transition: border-color 0.3s ease;
+        }
+
+        .schedule-table thead {
+            background-color: var(--table-header-bg);
+            transition: background-color 0.3s ease;
+        }
+
+        .schedule-table th {
+            padding: 1rem 1.25rem;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            border-bottom: 1px solid var(--border-color);
+            transition: color 0.3s ease, border-color 0.3s ease;
+        }
+
+        .schedule-table tbody tr:nth-child(even) {
+            background-color: var(--table-row-even);
+            transition: background-color 0.3s ease;
+        }
+
+        .schedule-table tbody tr:hover {
+            background-color: var(--table-row-hover);
+            transition: background-color 0.2s ease-in-out;
+        }
+
+        .schedule-table td {
+            padding: 1rem 1.25rem;
+            font-size: 0.95rem;
+            color: var(--text-primary);
+            white-space: nowrap;
+            transition: color 0.3s ease;
+        }
+
+        /* Daily Schedule Cards */
+        .daily-schedule-card {
+            background-color: var(--card-bg);
+            padding: 1.75rem;
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+            border: 1px solid var(--border-color);
+            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out, background-color 0.3s ease, border-color 0.3s ease;
+        }
+
+        .daily-schedule-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        .daily-schedule-card h3 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            color: var(--text-primary); /* Use primary text color for card titles */
+            border-bottom: 2px solid var(--section-heading-line); /* Accent border */
+            padding-bottom: 0.5rem;
+            transition: color 0.3s ease, border-color 0.3s ease;
+        }
+
+        .daily-schedule-card ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .daily-schedule-card li {
+            font-size: 1rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            transition: color 0.3s ease;
+        }
+        .daily-schedule-card li::before {
+            content: '•';
+            color: var(--section-heading-line);
+            font-size: 1.2em;
+            margin-right: 0.75rem;
+            line-height: 1;
+            transition: color 0.3s ease;
+        }
+
+        .schedule-footer {
+            background-color: var(--footer-bg);
+            color: var(--footer-text);
+            padding: 1.5rem;
+            text-align: center;
+            font-size: 0.9rem;
+            border-bottom-left-radius: 1rem;
+            border-bottom-right-radius: 1rem;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        /* Success Message Styling */
+        .success-message {
+            background-color: #d4edda; /* Light green background */
+            color: #155724; /* Dark green text */
+            border: 1px solid #c3e6cb;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            margin-top: 1.5rem;
+            text-align: center;
+            font-weight: 500;
+            opacity: 0;
+            transform: translateY(10px);
+            animation: fadeInSlideUp 0.5s forwards;
+            position: absolute; /* Position relative to parent */
+            width: calc(100% - 5rem); /* Adjust width to fit padding */
+            bottom: 1.5rem; /* Position at the bottom of the form body */
+            left: 2.5rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        body.dark-mode .success-message {
+            background-color: #1f2d3d; /* Darker background */
+            color: #9ae6b4; /* Lighter green text */
+            border-color: #38a169;
+        }
+
+        @keyframes fadeInSlideUp {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .main-content-wrapper {
+                padding: 1rem;
+            }
+            .card-base {
+                border-radius: 0.75rem;
+            }
+            .schedule-header, .contact-form-header {
+                padding: 1.5rem;
+                font-size: 1.8rem;
+            }
+            .schedule-header h1 {
+                font-size: 2rem;
+            }
+            .schedule-main, .contact-form-body {
+                padding: 1.5rem;
+            }
+            .section-heading {
+                font-size: 1.5rem;
+                margin-bottom: 1.25rem;
+            }
+            .schedule-table th, .schedule-table td {
+                padding: 0.75rem 0.8rem;
+                font-size: 0.8rem;
+            }
+            .daily-schedule-card {
+                padding: 1.25rem;
+            }
+            .daily-schedule-card h3 {
+                font-size: 1.3rem;
+            }
+            .daily-schedule-card li {
+                font-size: 0.9rem;
+            }
+            .contact-form-container {
+                max-width: 95%;
+                margin: 0 auto;
+            }
+            .toggle-button {
+                bottom: 20px;
+                padding: 0.8rem 1.2rem;
+                font-size: 1rem;
+            }
+            #toggle-view-button {
+                right: 20px;
+            }
+            #dark-mode-toggle {
+                left: 20px;
+            }
+            .success-message {
+                width: calc(100% - 3rem); /* Adjust width for smaller screens */
+                left: 1.5rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .schedule-header h1 {
+                font-size: 1.5rem;
+            }
+            .schedule-header p {
+                font-size: 0.9rem;
+            }
+            .section-heading {
+                font-size: 1.3rem;
+            }
+            .toggle-button {
+                padding: 0.6rem 0.9rem;
+                font-size: 0.85rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="main-content-wrapper">
+        <!-- Class Schedule Section -->
+        <div id="schedule-section" class="card-base">
+            <header class="schedule-header">
+                <h1 class="text-center">Class Schedule</h1>
+                <p class="text-center">Your detailed weekly and course-wise schedule</p>
+            </header>
+
+            <main class="schedule-main">
+                <section class="mb-10">
+                    <h2 class="section-heading">My Class Schedule</h2>
+                    <div class="overflow-x-auto schedule-table-wrapper">
+                        <table class="min-w-full schedule-table">
+                            <thead>
+                                <tr>
+                                    <th class="rounded-tl-lg">Course ID</th>
+                                    <th>Course Name</th>
+                                    <th>Faculty</th>
+                                    <th>Section</th>
+                                    <th>Room</th>
+                                    <th>Date</th>
+                                    <th>Time</th>
+                                    <th class="rounded-tr-lg">Exam Time</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y">
+                                <!-- CSE 2201 -->
+                                <tr>
+                                    <td>CSE 2201</td>
+                                    <td>Algorithms</td>
+                                    <td>Ruma</td>
+                                    <td>02</td>
+                                    <td>PC 207</td>
+                                    <td>Sun/Tue</td>
+                                    <td>1:40 - 3:00</td>
+                                    <td>8:00 - 9:00</td>
+                                </tr>
+                                <!-- CSE 2203 -->
+                                <tr>
+                                    <td>CSE 2203</td>
+                                    <td>Computer Organization and Architecture</td>
+                                    <td>Rubaiya Hafiz</td>
+                                    <td>02</td>
+                                    <td>PD 110</td>
+                                    <td>Mon/Wed</td>
+                                    <td>9:25 - 10:45</td>
+                                    <td>8:00 - 9:00 (Lab Exam: 8:00)</td>
+                                </tr>
+                                <!-- CSE 2200 -->
+                                <tr>
+                                    <td>CSE 2200</td>
+                                    <td>Design Project</td>
+                                    <td>urmi</td>
+                                    <td>2L</td>
+                                    <td>PB 204</td>
+                                    <td>Tue</td>
+                                    <td>10:50 - 1:35</td>
+                                    <td>LAB</td>
+                                </tr>
+                                <!-- STA 2101 -->
+                                <tr>
+                                    <td>STA 2101</td>
+                                    <td>Statistics and Probability</td>
+                                    <td>Ahsana Ullah</td>
+                                    <td>02</td>
+                                    <td>PB 104</td>
+                                    <td>Mon/Wed</td>
+                                    <td>1:40 - 3:00</td>
+                                    <td>8:00 -10:00</td>
+                                </tr>
+                                <!-- EEE 1301 -->
+                                <tr>
+                                    <td>EEE 1301</td>
+                                    <td>Electrical Circuits I</td>
+                                    <td>Mainul Haque</td>
+                                    <td>02</td>
+                                    <td>PC 204</td>
+                                    <td>Sun/Tue</td>
+                                    <td>4:50 - 5:50</td>
+                                    <td>12:00 - 1:00</td>
+                                </tr>
+                                <!-- EEE 1302 -->
+                                <tr>
+                                    <td>EEE 1302</td>
+                                    <td>Electrical Circuits I Lab</td>
+                                    <td>Mainul Haque</td>
+                                    <td>3L</td>
+                                    <td>PA 102</td>
+                                    <td>Mon</td>
+                                    <td>10:50 - 1:35</td>
+                                    <td>Lab</td>
+                                </tr>
+                                <!-- CSE 3202 -->
+                                <tr>
+                                    <td>CSE 3202</td>
+                                    <td>Artificial Intelligence and Machine Learning Lab</td>
+                                    <td>Suravi Akhter</td>
+                                    <td>1L</td>
+                                    <td>PB 107</td>
+                                    <td>Mon</td>
+                                    <td>3:05 - 5:50</td>
+                                    <td>Lab</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <section>
+                    <h2 class="section-heading">Schedule by Day</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                        <!-- Sunday -->
+                        <div class="daily-schedule-card">
+                            <h3>Sunday</h3>
+                            <ul>
+                                <li>CSE 2201: 1:40 - 3:00 PM</li>
+                                <li>EEE 1301: 4:50 - 5:50 PM</li>
+                            </ul>
+                        </div>
+                        <!-- Monday -->
+                        <div class="daily-schedule-card">
+                            <h3>Monday</h3>
+                            <ul>
+                                <li>CSE 2203: 9:25 - 10:45 AM</li>
+                                <li>EEE 1302: 10:50 - 1:35 PM</li>
+                                <li>STA 2101: 1:40 - 3:00 PM</li>
+                                <li>CSE 3202: 3:05 - 5:50 PM</li>
+                            </ul>
+                        </div>
+                        <!-- Tuesday -->
+                        <div class="daily-schedule-card">
+                            <h3>Tuesday</h3>
+                            <ul>
+                                <li>CSE 2200: 10:50 - 1:35 PM</li>
+                                <li>CSE 2201: 1:40 - 3:00 PM</li>
+                                <li>EEE 1301: 4:50 - 5:50 PM</li>
+                            </ul>
+                        </div>
+                        <!-- Wednesday -->
+                        <div class="daily-schedule-card">
+                            <h3>Wednesday</h3>
+                            <ul>
+                                <li>CSE 2203: 9:25 - 10:45 AM</li>
+                                <li>STA 2101: 1:40 - 3:00 PM</li>
+                            </ul>
+                        </div>
+                    </div>
+                </section>
+            </main>
+
+            <footer class="schedule-footer">
+                <p>&copy; 2025 University Schedule. All rights reserved.</p>
+            </footer>
+        </div>
+
+        <!-- Contact Form Section -->
+        <div id="contact-form-section" class="card-base contact-form-container">
+            <div class="contact-form-header">
+                Sent Message Ankon
+            </div>
+            <div class="contact-form-body" style="position: relative;"> <!-- Added position:relative for success message positioning -->
+                <script>
+                var submitted=false
+                </script>
+                <iframe name="hiddenConfirm" id="hiddenConfirm" style="display:none;" onload="if(submitted){ showSuccessMessage(); resetForm(); }"> </iframe>
+                <form id="contactForm" action="https://docs.google.com/forms/d/e/1FAIpQLSfHm0l7XJNpn7L9iOVTGNyvH2zIhxiuDdciKo5xSzHZazc3Eg/formResponse" method="POST" target="hiddenConfirm" onsubmit="submitted=true">
+                    <div class="input-field">
+                        <label for="name">Name</label>
+                        <input type="text" id="name" name="entry.1127051324" placeholder="Enter your name" required>
+                    </div>
+                    
+                    <div class="input-field">
+                        <label for="email">Email</label>
+                        <input type="email" id="email" name="entry.1001212193" placeholder="Enter your Email address" required>
+                    </div>
+                    
+                    <div class="input-field">
+                        <label for="message">Message</label>
+                        <textarea id="message" name="entry.884050229" placeholder="Write your message here" required></textarea>
+                    </div>
+                    <button type="submit" class="contact-form-button">Submit</button>
+                </form>
+                <div id="success-message" class="success-message" style="display:none;">
+                    Message sent successfully! Thank you.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toggle View Button -->
+    <button id="toggle-view-button" class="toggle-button">
+        Contact Ankon
+    </button>
+
+    <!-- Dark Mode Toggle Button -->
+    <button id="dark-mode-toggle" class="toggle-button">
+        Toggle Dark Mode
+    </button>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const scheduleSection = document.getElementById('schedule-section');
+            const contactFormSection = document.getElementById('contact-form-section');
+            const toggleViewButton = document.getElementById('toggle-view-button');
+            const darkModeToggle = document.getElementById('dark-mode-toggle');
+            const body = document.body;
+            const contactForm = document.getElementById('contactForm');
+            const successMessage = document.getElementById('success-message');
+
+            // Function to set the theme based on localStorage or system preference
+            function setInitialTheme() {
+                const savedTheme = localStorage.getItem('theme');
+                if (savedTheme === 'dark') {
+                    body.classList.add('dark-mode');
+                } else if (savedTheme === 'light') {
+                    body.classList.remove('dark-mode');
+                } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                    // Default to system preference if no saved theme
+                    body.classList.add('dark-mode');
+                }
+            }
+
+            // Function to show success message
+            function showSuccessMessage() {
+                successMessage.style.display = 'block';
+                // Hide message after a few seconds
+                setTimeout(() => {
+                    successMessage.style.display = 'none';
+                }, 5000);
+            }
+
+            // Function to reset the form
+            function resetForm() {
+                contactForm.reset();
+            }
+
+            // Set initial theme on load
+            setInitialTheme();
+
+            // Toggle View Button Logic
+            toggleViewButton.addEventListener('click', () => {
+                if (scheduleSection.style.display === 'block') {
+                    scheduleSection.style.display = 'none';
+                    contactFormSection.style.display = 'flex';
+                    contactFormSection.classList.add('active');
+                    toggleViewButton.textContent = 'Show Schedule';
+                } else {
+                    contactFormSection.classList.remove('active');
+                    setTimeout(() => {
+                        contactFormSection.style.display = 'none';
+                        scheduleSection.style.display = 'block';
+                    }, 400);
+                    toggleViewButton.textContent = 'Contact Ankon';
+                }
+            });
+
+            // Dark Mode Toggle Logic
+            darkModeToggle.addEventListener('click', () => {
+                body.classList.toggle('dark-mode');
+                if (body.classList.contains('dark-mode')) {
+                    localStorage.setItem('theme', 'dark');
+                } else {
+                    localStorage.setItem('theme', 'light');
+                }
+            });
+        });
+    </script>
+</body>
+</html>
