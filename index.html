@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Class Schedule & Contact Ankon</title>
-    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
@@ -422,6 +421,9 @@
             .schedule-header h1 {
                 font-size: 2rem;
             }
+            .schedule-header p {
+                font-size: 0.9rem;
+            }
             .schedule-main, .contact-form-body {
                 padding: 1.5rem;
             }
@@ -482,7 +484,6 @@
 </head>
 <body>
     <div class="main-content-wrapper">
-        <!-- Class Schedule Section -->
         <div id="schedule-section" class="card-base">
             <header class="schedule-header">
                 <h1 class="text-center">Class Schedule</h1>
@@ -507,7 +508,6 @@
                                 </tr>
                             </thead>
                             <tbody class="divide-y">
-                                <!-- CSE 2201 -->
                                 <tr>
                                     <td>CSE 2201</td>
                                     <td>Algorithms</td>
@@ -518,7 +518,6 @@
                                     <td>1:40 - 3:00</td>
                                     <td>8:00 - 9:00</td>
                                 </tr>
-                                <!-- CSE 2203 -->
                                 <tr>
                                     <td>CSE 2203</td>
                                     <td>Computer Organization and Architecture</td>
@@ -529,7 +528,6 @@
                                     <td>9:25 - 10:45</td>
                                     <td>8:00 - 9:00 (Lab Exam: 8:00)</td>
                                 </tr>
-                                <!-- CSE 2200 -->
                                 <tr>
                                     <td>CSE 2200</td>
                                     <td>Design Project</td>
@@ -540,7 +538,6 @@
                                     <td>10:50 - 1:35</td>
                                     <td>LAB</td>
                                 </tr>
-                                <!-- STA 2101 -->
                                 <tr>
                                     <td>STA 2101</td>
                                     <td>Statistics and Probability</td>
@@ -551,7 +548,6 @@
                                     <td>1:40 - 3:00</td>
                                     <td>8:00 -10:00</td>
                                 </tr>
-                                <!-- EEE 1301 -->
                                 <tr>
                                     <td>EEE 1301</td>
                                     <td>Electrical Circuits I</td>
@@ -562,7 +558,6 @@
                                     <td>4:50 - 5:50</td>
                                     <td>12:00 - 1:00</td>
                                 </tr>
-                                <!-- EEE 1302 -->
                                 <tr>
                                     <td>EEE 1302</td>
                                     <td>Electrical Circuits I Lab</td>
@@ -573,7 +568,6 @@
                                     <td>10:50 - 1:35</td>
                                     <td>Lab</td>
                                 </tr>
-                                <!-- CSE 3202 -->
                                 <tr>
                                     <td>CSE 3202</td>
                                     <td>Artificial Intelligence and Machine Learning Lab</td>
@@ -592,7 +586,6 @@
                 <section>
                     <h2 class="section-heading">Schedule by Day</h2>
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                        <!-- Sunday -->
                         <div class="daily-schedule-card">
                             <h3>Sunday</h3>
                             <ul>
@@ -600,7 +593,6 @@
                                 <li>EEE 1301: 4:50 - 5:50 PM</li>
                             </ul>
                         </div>
-                        <!-- Monday -->
                         <div class="daily-schedule-card">
                             <h3>Monday</h3>
                             <ul>
@@ -610,7 +602,6 @@
                                 <li>CSE 3202: 3:05 - 5:50 PM</li>
                             </ul>
                         </div>
-                        <!-- Tuesday -->
                         <div class="daily-schedule-card">
                             <h3>Tuesday</h3>
                             <ul>
@@ -619,7 +610,6 @@
                                 <li>EEE 1301: 4:50 - 5:50 PM</li>
                             </ul>
                         </div>
-                        <!-- Wednesday -->
                         <div class="daily-schedule-card">
                             <h3>Wednesday</h3>
                             <ul>
@@ -636,18 +626,12 @@
             </footer>
         </div>
 
-        <!-- Contact Form Section -->
         <div id="contact-form-section" class="card-base contact-form-container">
             <div class="contact-form-header">
                 Sent Message Ankon
             </div>
             <div class="contact-form-body">
-                <script>
-                var submitted=false
-                </script>
-                <!-- Removed onload from iframe to prevent cross-origin issues -->
-                <iframe name="hiddenConfirm" id="hiddenConfirm" style="display:none;"> </iframe>
-                <form id="contactForm" action="https://docs.google.com/forms/d/e/1FAIpQLSfHm0l7XJNpn7L9iOVTGNyvH2zIhxiuDdciKo5xSzHZazc3Eg/formResponse" method="POST" target="hiddenConfirm" onsubmit="submitted=true; showSuccessMessageAndReturnToSchedule(); return true;">
+                <form id="contactForm" onsubmit="submitForm(event)">
                     <div class="input-field">
                         <label for="name">Name</label>
                         <input type="text" id="name" name="entry.1127051324" placeholder="Enter your name" required>
@@ -671,17 +655,40 @@
         </div>
     </div>
 
-    <!-- Toggle View Button -->
     <button id="toggle-view-button" class="toggle-button">
         Contact Ankon
     </button>
 
-    <!-- Dark Mode Toggle Button -->
     <button id="dark-mode-toggle" class="toggle-button">
         Toggle Dark Mode
     </button>
 
     <script>
+        // Form submission function using fetch API
+        async function submitForm(event) {
+            event.preventDefault(); // Prevent default form submission
+            
+            const form = document.getElementById('contactForm');
+            const formUrl = "https://docs.google.com/forms/d/e/1FAIpQLSfHm0l7XJNpn7L9iOVTGNyvH2zIhxiuDdciKo5xSzHZazc3Eg/formResponse";
+            
+            const formData = new FormData(form);
+            
+            try {
+                // Submit form data using fetch
+                await fetch(formUrl, {
+                    method: 'POST',
+                    body: formData,
+                    mode: 'no-cors' // Use 'no-cors' mode for Google Forms submissions
+                });
+                
+                // On success, show message and transition back
+                showSuccessMessageAndReturnToSchedule();
+            } catch (error) {
+                console.error('Error submitting form:', error);
+                // Handle submission error (e.g., show an error message)
+            }
+        }
+        
         // Function to show success message and then return to schedule
         function showSuccessMessageAndReturnToSchedule() {
             const successMessage = document.getElementById('success-message');
@@ -689,11 +696,11 @@
             const scheduleSection = document.getElementById('schedule-section');
             const contactFormSection = document.getElementById('contact-form-section');
             const toggleViewButton = document.getElementById('toggle-view-button');
-
+            
             // Show success message
             successMessage.style.display = 'block';
-            contactForm.reset(); // Reset form immediately
-
+            contactForm.reset(); // Reset form fields
+            
             // After 2 seconds, hide message and switch back to schedule
             setTimeout(() => {
                 successMessage.style.display = 'none';
