@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ULAB Course Planner | Shareable Routine</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Load html2pdf for PDF export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <!-- Load qrcode.js for QR code generation -->
+    <script src="https://cdn.jsdelivr.net/gh/davidshimjs/qrcodejs/qrcode.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Firebase Imports -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, onSnapshot, collection, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        
+        // Expose Firebase modules globally
+        window.firebase = {
+            initializeApp,
+            getAuth, signInAnonymously, signInWithCustomToken,
+            getFirestore, doc, setDoc, onSnapshot, collection, setLogLevel
+        };
+    </script>
+    
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f7f9fb; /* Very light background */
+            transition: background-color 0.3s;
+        }
+        /* New vibrant aesthetic based on Indigo/Blue */
+        .primary-color { background-color: #4f46e5; } /* Indigo 600 */
+        .primary-text { color: #4f46e5; }
+        .primary-hover:hover { background-color: #4338ca; } /* Indigo 700 */
+
+        /* --- 3D EFFECT CSS --- */
+        #pdf-content-wrapper {
+            transition: transform 0.5s, box-shadow 0.5s;
+            background-color: white;
+            border: 1px solid #e2e8f0;
+            /* Start with a slightly elevated look */
+            transform: perspective(1000px) translateY(-2px);
+            /* Shinier shadow effect */
+            box-shadow: 0 10px 30px -5px rgba(79, 70, 229, 0.2), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        #pdf-content-wrapper:hover {
+            /* A more dramatic 3D lift/tilt on hover */
+            box-shadow: 0 20px 40px -10px rgba(79, 70, 229, 0.4), 0 10px 10px -5px rgba(0, 0, 0, 0.1);
+            transform: perspective(1000px) translateY(-5px) rotateX(0.5deg) rotateY(-0.5deg);
+        }
+        
+        /* Enhancing Buttons for a 3D glossy press effect */
+        .action-button {
+            transition: all 0.15s ease-out;
+            position: relative;
+            top: 0;
+            box-shadow: 0 4px 0 0 #3730a3, 0 10px 20px rgba(79, 70, 229, 0.4);
+        }
+        .action-button:active {
+            top: 4px; /* Move down on click */
+            box-shadow: 0 0 0 0 #3730a3, 0 5px 10px rgba(79, 70, 229, 0.2); /* Remove depth shadow on press */
+        }
+        
+        /* Specific Button Gloss and Color */
+        #download-button, #share-button, #modal-confirm {
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.2) 0%, rgba(0, 0, 0, 0.05) 100%), #4f46e5; /* Indigo Gradient */
+        }
+        #clear-button {
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.2) 0%, rgba(0, 0, 0, 0.05) 100%), #ef4444; /* Red Gradient */
+            box-shadow: 0 4px 0 0 #b91c1c, 0 10px 20px rgba(239, 68, 68, 0.4);
+        }
+        #clear-button:active {
+            box-shadow: 0 0 0 0 #b91c1c, 0 5px 10px rgba(239, 68, 68, 0.2);
+        }
+
+        /* Table Aesthetics Update (Blue Theme) */
+        .routine-table {
+            border-collapse: separate;
+            border-spacing: 0;
+            width: 100%;
+        }
+        .routine-table th, .routine-table td {
+            border: 1px solid #c7d2fe; /* Light blue border */
+            padding: 0;
+            text-align: center;
+        }
+        .routine-table th {
+            background-color: #4f46e5; /* Indigo 600 */
+            color: white;
+            font-weight: 700;
+            position: sticky;
+            top: 0;
+            z-index: 20;
+            padding: 12px 6px;
+        }
+        .routine-table td {
+            background-color: white;
+            transition: background-color 0.2s;
+        }
+        .routine-table td:hover {
+            background-color: #f5f7ff; /* Very light blue on hover */
+        }
+        .editable-input {
+            width: 100%;
+            min-height: 50px;
+            padding: 8px;
+            border: none;
+            text-align: center;
+            outline: none;
+            background: transparent;
+            font-size: 14px;
+            line-height: 1.3;
+            resize: none;
+            overflow: hidden;
+            transition: background-color 0.1s;
+        }
+        .editable-input:focus {
+            background-color: #f5f7ff; /* Lightest blue on focus */
+            box-shadow: inset 0 0 0 2px rgba(79, 70, 229, 0.5); /* Indigo focus ring */
+        }
+        /* Sticky Day Column - UPDATED FOR COOLER LOOK */
+        .sticky-day {
+            position: sticky;
+            left: 0;
+            z-index: 10;
+            /* New cooler background color: Indigo 200 */
+            background-color: #c7d2fe !important; 
+            /* New darker text color: Indigo 800 */
+            color: #3730a3;
+            border-right: 2px solid #a5b4fc !important;
+            padding: 8px;
+            font-size: 14px;
+            font-weight: 700; /* Ensure text is bold */
+        }
+        .user-info-bar {
+            background-color: #eff6ff; /* Lighter blue */
+            color: #1e40af;
+            border: 1px solid #bfdbfe;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        /* Style for QR code container */
+        #qrcode-container img {
+            margin: 0 auto;
+        }
+    </style>
+</head>
+<body class="p-4 md:p-10">
+
+    <div class="max-w-7xl mx-auto">
+        <header class="mb-10 text-center" id="app-header">
+            <h1 class="text-4xl md:text-5xl font-extrabold text-gray-900 tracking-tighter">
+                <span class="primary-text">ULAB</span> Course Plan
+            </h1>
+            <p class="text-xl text-gray-600 mt-2">Preregistration Time Table - Real-time Sync & Sharing</p>
+            
+            <div id="auth-status" class="mt-6 p-4 rounded-xl shadow-md user-info-bar text-sm md:text-base">
+                <p id="user-id-display" class="font-mono text-xs truncate">Authenticating...</p>
+                <p class="font-semibold mt-1">Status: <span id="sync-status">Connecting to Database...</span></p>
+            </div>
+        </header>
+        
+        <div id="pdf-content-wrapper" class="rounded-xl shadow-xl">
+            <!-- Dedicated header for PDF export -->
+            <div id="pdf-header-placeholder" class="hidden p-6 text-center">
+                <h1 class="text-3xl font-extrabold text-gray-900 mb-1">ULAB Course Routine Plan</h1>
+            
+                
+                <!-- GitHub Link Inclusion -->
+                <p class="text-xs text-gray-400 mt-4">Planner created by: <a href="https://github.com/ankonOfficial" style="color: #4f46e5;">https://github.com/ankonOfficial</a></p>
+            </div>
+            
+            <div class="overflow-x-auto rounded-xl">
+                <table id="routine-table" class="routine-table">
+                    <thead>
+                        <tr>
+                            <th class="w-1/12 min-w-[80px] rounded-tl-xl sticky-day">Day/Time</th>
+                            <th class="time-slot-header w-[10%] min-w-[100px]">8:00 - 9:20 am</th>
+                            <th class="time-slot-header w-[10%] min-w-[100px]">9:25 - 10:45 am</th>
+                            <th class="time-slot-header w-[10%] min-w-[100px]">10:50 - 12:10 pm</th>
+                            <th class="time-slot-header w-[10%] min-w-[100px]">12:15 - 1:35 pm</th>
+                            <th class="time-slot-header w-[10%] min-w-[100px]">1:40 - 3:00 pm</th>
+                            <th class="time-slot-header w-[10%] min-w-[100px]">3:05 - 4:25 pm</th>
+                            <th class="time-slot-header w-[10%] min-w-[100px] rounded-tr-xl">4:30 - 5:50 pm</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Table content dynamically loaded by JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <footer class="mt-8 text-center text-gray-500 text-sm">
+            <div class="flex flex-wrap justify-center space-y-4 sm:space-y-0 sm:space-x-4">
+                <button id="download-button" class="flex items-center justify-center px-6 py-3 text-white font-semibold rounded-xl transition duration-300 transform hover:scale-[1.02] action-button">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 11.586V3a1 1 0 112 0v8.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>
+                    Export PDF
+                </button>
+                <button id="share-button" class="flex items-center justify-center px-6 py-3 text-white font-semibold rounded-xl transition duration-300 transform hover:scale-[1.02] action-button">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor"><path d="M15 8a3 3 0 10-2.977-2.63l-4.94 2.47a3 3 0 100 4.314l4.94 2.47a3 3 0 10.832-1.664l-4.94-2.47a3 3 0 000-1.076l4.94-2.47C13.567 7.64 14.233 8 15 8z" /></svg>
+                    Share Routine
+                </button>
+                <button id="clear-button" class="flex items-center justify-center px-6 py-3 text-white font-semibold rounded-xl transition duration-300 transform hover:scale-[1.02] action-button">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" /></svg>
+                    Clear All
+                </button>
+            </div>
+            <p class="mt-6">power by ankonOfficial</p>
+        </footer>
+        
+        <!-- Custom Modal for Confirmation / Sharing -->
+        <div id="custom-modal" class="fixed inset-0 bg-black bg-opacity-70 hidden items-center justify-center z-50 transition-opacity duration-300 opacity-0">
+            <div id="modal-content" class="bg-white p-6 rounded-xl shadow-2xl max-w-lg mx-4 text-center w-full transform scale-95 transition-transform duration-300">
+                <h3 id="modal-title" class="text-xl font-semibold text-gray-800 mb-4">Confirm Action</h3>
+                <p id="modal-message" class="text-gray-600 mb-6">Are you sure?</p>
+                <div id="modal-share-content" class="hidden">
+                    <!-- Share URL and Copy button -->
+                    <div class="flex items-center space-x-2 bg-gray-100 p-3 rounded-lg mb-4">
+                        <input type="text" id="share-link-input" readonly class="flex-grow bg-transparent border-none text-sm font-mono truncate outline-none text-gray-700"/>
+                        <button id="copy-link-button" class="primary-color text-white px-3 py-1 rounded-lg text-sm primary-hover action-button">
+                            Copy
+                        </button>
+                    </div>
+                    <!-- QR Code container -->
+                    <div class="p-4 bg-white border border-gray-200 rounded-lg max-w-xs mx-auto mb-4" id="qrcode-container">
+                        <!-- QR Code will be drawn here -->
+                    </div>
+                </div>
+
+                <div id="modal-actions" class="flex justify-center space-x-4">
+                    <button id="modal-confirm" class="px-5 py-2 primary-color text-white font-semibold rounded-lg transition action-button">Confirm</button>
+                    <button id="modal-cancel" class="px-5 py-2 bg-gray-300 text-gray-800 font-semibold rounded-lg hover:bg-gray-400 transition action-button">Close</button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script type="module">
+        // Set log level to Debug for visibility in the console
+        if (window.firebase && window.firebase.setLogLevel) {
+            window.firebase.setLogLevel('Debug');
+        }
+
+        // Global Firebase variables
+        let db = null;
+        let auth = null;
+        let userId = null;
+        let useLocalStorage = false;
+        
+        // Environment variables
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+        
+        const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday"];
+        const TIMES = [
+            "T1_800", // 8:00 - 9:20 am
+            "T2_925", // 9:25 - 10:45 am
+            "T3_1050", // 10:50 - 12:10 pm
+            "T4_1215", // 12:15 - 1:35 pm
+            "T5_140", // 1:40 - 3:00 pm
+            "T6_305", // 3:05 - 4:25 pm
+            "T7_430" // 4:30 - 5:50 pm
+        ];
+        
+        let currentRoutineData = {};
+        let currentRoutineId = null; // Stores the ID of the routine being displayed (either own UID or shared routineId)
+        
+        // --- 1. FIREBASE INITIALIZATION AND AUTHENTICATION ---
+
+        function getRoutineIdFromUrl() {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get('routineId');
+        }
+
+        function activateLocalStorage(statusMessage) {
+            console.warn("Activating Local Storage Mode: " + statusMessage);
+            useLocalStorage = true;
+            userId = "local-user";
+            currentRoutineId = userId;
+            
+            const userIdDisplay = document.getElementById('user-id-display');
+            if(userIdDisplay) userIdDisplay.textContent = statusMessage;
+            
+            document.getElementById('sync-status').textContent = "Ready (Local)";
+            
+            // Load local data
+            const localData = localStorage.getItem('ulab_routine_data');
+            if (localData) {
+                currentRoutineData = JSON.parse(localData);
+                renderTable(currentRoutineData);
+            } else {
+                renderTable({});
+            }
+        }
+
+        async function initializeFirebase() {
+            try {
+                // Fallback to Local Storage if config is missing
+                if (!firebaseConfig.apiKey) {
+                    activateLocalStorage("Mode: Local Storage");
+                    return;
+                }
+
+                const app = window.firebase.initializeApp(firebaseConfig);
+                db = window.firebase.getFirestore(app);
+                auth = window.firebase.getAuth(app);
+
+                const userIdDisplay = document.getElementById('user-id-display');
+                
+                if (initialAuthToken) {
+                    await window.firebase.signInWithCustomToken(auth, initialAuthToken);
+                } else {
+                    await window.firebase.signInAnonymously(auth);
+                }
+                
+                // Set the current user ID for saving/sharing
+                userId = auth.currentUser.uid;
+                userIdDisplay.textContent = `Your User ID: ${userId}`;
+                
+                // Determine which routine ID to load
+                const sharedId = getRoutineIdFromUrl();
+                currentRoutineId = sharedId || userId;
+
+                if (sharedId) {
+                    document.getElementById('app-header').querySelector('h1').innerHTML = `<span class="primary-text">Shared</span> Routine Viewer`;
+                    document.getElementById('sync-status').textContent = "Viewing Shared Routine (Read-Only)";
+                    // Disable editing elements in shared mode
+                    document.querySelectorAll('button').forEach(btn => {
+                        if (btn.id !== 'download-button' && btn.id !== 'share-button') {
+                             btn.disabled = true;
+                             btn.classList.add('opacity-50', 'cursor-not-allowed');
+                        }
+                    });
+                }
+                
+                // Start listening for real-time updates
+                startRoutineListener();
+
+            } catch (error) {
+                console.error("Firebase Initialization or Auth Failed:", error);
+                activateLocalStorage("Offline Mode (Connection Failed)");
+            }
+        }
+        
+        // --- 2. FIRESTORE OPERATIONS ---
+
+        function getRoutineDocRef(routineIdToLoad) {
+            if (!db || !routineIdToLoad) {
+                console.error("Database or Routine ID is missing.");
+                return null;
+            }
+            // Public/Shareable Data Path: /artifacts/{appId}/public/data/routines/{routineIdToLoad}
+            return window.firebase.doc(
+                window.firebase.collection(db, `artifacts/${appId}/public/data/routines`),
+                routineIdToLoad
+            );
+        }
+
+        /**
+         * Saves the current routine data to Firestore (only available for the owner's routine).
+         */
+        async function saveRoutineToFirestore(data) {
+            if (useLocalStorage) {
+                localStorage.setItem('ulab_routine_data', JSON.stringify(data));
+                document.getElementById('sync-status').textContent = "Saved (Local)";
+                return;
+            }
+
+            // Only allow saving if loading the user's OWN routine
+            if (currentRoutineId !== userId) {
+                console.warn("Attempted to save a shared routine. Operation blocked.");
+                return;
+            }
+            
+            const docRef = getRoutineDocRef(userId);
+            if (docRef) {
+                document.getElementById('sync-status').textContent = "Saving...";
+                try {
+                    // Set the doc with the routine data
+                    await window.firebase.setDoc(docRef, { routine: data });
+                    document.getElementById('sync-status').textContent = "Synced to Cloud";
+                } catch (error) {
+                    console.error("Error writing document:", error);
+                    document.getElementById('sync-status').textContent = "Save Failed!";
+                }
+            }
+        }
+
+        /**
+         * Sets up the real-time listener for the routine data.
+         */
+        function startRoutineListener() {
+            const docRef = getRoutineDocRef(currentRoutineId);
+            if (!docRef) return;
+
+            window.firebase.onSnapshot(docRef, (docSnapshot) => {
+                if (docSnapshot.exists()) {
+                    const data = docSnapshot.data().routine || {};
+                    currentRoutineData = data;
+                    renderTable(data);
+                    
+                    if (currentRoutineId === userId) {
+                        document.getElementById('sync-status').textContent = "Synced: Live Updates";
+                    }
+                } else {
+                    currentRoutineData = {};
+                    renderTable({});
+                    if (currentRoutineId === userId) {
+                         document.getElementById('sync-status').textContent = "Ready (New Routine)";
+                         // Auto-save empty doc if it doesn't exist to establish ownership
+                         saveRoutineToFirestore({});
+                    } else {
+                        document.getElementById('sync-status').textContent = "Routine Not Found";
+                    }
+                }
+            }, (error) => {
+                console.error("Error listening to document:", error);
+                document.getElementById('sync-status').textContent = "Real-time Sync Failed!";
+            });
+        }
+
+        // --- 3. UI/UX & MODAL FUNCTIONS ---
+
+        /**
+         * Clears all saved routine data (via modal).
+         */
+        function clearRoutine() {
+             if (currentRoutineId !== userId) {
+                console.warn("Cannot clear a shared routine.");
+                return;
+            }
+            showConfirmModal(
+                'Clear All Entries',
+                'Are you sure you want to clear your entire saved routine? This action is synced and cannot be undone.',
+                () => {
+                    // Action: Set routine to empty object in Firestore
+                    saveRoutineToFirestore({}); 
+                }
+            );
+        }
+        
+        /**
+         * Shows the Share Modal with Link and QR Code.
+         */
+        function showShareModal() {
+            if (!userId) return;
+
+            const shareLink = `${window.location.origin}${window.location.pathname}?routineId=${userId}`;
+            
+            // Set modal content for sharing
+            document.getElementById('modal-title').textContent = "Share Your Routine";
+            document.getElementById('modal-message').textContent = "Share this link or QR code so others can view your class schedule.";
+            
+            // Show share-specific elements, hide confirmation buttons
+            document.getElementById('modal-share-content').classList.remove('hidden');
+            document.getElementById('modal-confirm').classList.add('hidden');
+            document.getElementById('modal-cancel').textContent = "Close";
+            
+            // Set up link input
+            const shareInput = document.getElementById('share-link-input');
+            shareInput.value = shareLink;
+            
+            // Copy functionality
+            document.getElementById('copy-link-button').onclick = () => {
+                shareInput.select();
+                document.execCommand('copy');
+                document.getElementById('copy-link-button').textContent = "Copied!";
+                setTimeout(() => document.getElementById('copy-link-button').textContent = "Copy", 2000);
+            };
+
+            // QR Code Generation
+            const qrContainer = document.getElementById('qrcode-container');
+            qrContainer.innerHTML = ''; // Clear previous QR code
+            // Check if QRCode is available (from CDN)
+            if (typeof QRCode !== 'undefined') {
+                new QRCode(qrContainer, {
+                    text: shareLink,
+                    width: 128,
+                    height: 128,
+                    colorDark : "#4f46e5", /* Use the new primary blue */
+                    colorLight : "#ffffff",
+                    correctLevel : QRCode.CorrectLevel.H
+                });
+            } else {
+                 qrContainer.innerHTML = '<p class="text-red-500 text-sm">QR Code library failed to load.</p>';
+            }
+
+            // Show the modal
+            showModal();
+        }
+
+        /**
+         * Displays the custom modal for confirmation or sharing.
+         * @param {string} title - The modal title.
+         * @param {string} message - The message to display.
+         * @param {function} onConfirm - Callback function if user confirms (only for confirmation).
+         */
+        function showConfirmModal(title, message, onConfirm) {
+            // Setup for confirmation mode
+            document.getElementById('modal-title').textContent = title;
+            document.getElementById('modal-message').textContent = message;
+            document.getElementById('modal-share-content').classList.add('hidden');
+            document.getElementById('modal-confirm').classList.remove('hidden');
+            document.getElementById('modal-cancel').textContent = "Cancel";
+
+            const confirmBtn = document.getElementById('modal-confirm');
+            confirmBtn.onclick = () => {
+                onConfirm();
+                hideModal();
+            };
+            
+            showModal();
+        }
+        
+        /**
+         * General function to show the modal container.
+         */
+        function showModal() {
+            const modal = document.getElementById('custom-modal');
+            modal.classList.remove('hidden', 'opacity-0');
+            modal.classList.add('flex');
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+                modal.querySelector('#modal-content').classList.remove('scale-95');
+                modal.querySelector('#modal-content').classList.add('scale-100');
+            }, 10);
+            
+            // Setup general cancel/close button
+            document.getElementById('modal-cancel').onclick = hideModal;
+        }
+
+        /**
+         * General function to hide the modal container.
+         */
+        function hideModal() {
+            const modal = document.getElementById('custom-modal');
+            
+            modal.querySelector('#modal-content').classList.remove('scale-100');
+            modal.querySelector('#modal-content').classList.add('scale-95');
+            modal.classList.add('opacity-0');
+
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            }, 300);
+        }
+        
+        /**
+         * Renders the routine table body based on stored data.
+         * @param {Object} routineData - Data fetched from Firestore.
+         */
+        function renderTable(routineData) {
+            const tableBody = document.querySelector('#routine-table tbody');
+            tableBody.innerHTML = '';
+            
+            const isReadOnly = currentRoutineId !== userId;
+
+            DAYS.forEach(day => {
+                const row = document.createElement('tr');
+                row.innerHTML = `<th class="sticky-day">${day}</th>`;
+
+                TIMES.forEach(timeSlot => {
+                    const content = routineData[day] ? (routineData[day][timeSlot] || '') : '';
+
+                    const cell = document.createElement('td');
+                    cell.innerHTML = `
+                        <textarea
+                            class="editable-input"
+                            data-day="${day}"
+                            data-slot="${timeSlot}"
+                            placeholder="Course Code, Section, Faculty"
+                            oninput="autoExpand(this); handleInput(this);"
+                            ${isReadOnly ? 'readonly' : ''}
+                            ${isReadOnly ? 'style="background-color: #f7f9fb; cursor: default;"' : ''}
+                        >${content}</textarea>
+                    `;
+                    row.appendChild(cell);
+                });
+
+                tableBody.appendChild(row);
+            });
+
+            // After rendering, ensure all textareas are correctly sized
+            document.querySelectorAll('.editable-input').forEach(autoExpand);
+        }
+
+        /**
+         * Handles the input event, saving data locally and triggering the Firestore save.
+         * @param {HTMLTextAreaElement} element - The textarea element that was input into.
+         */
+        function handleInput(element) {
+             // Block saving if viewing a shared routine
+            if (currentRoutineId !== userId) return;
+
+            const day = element.getAttribute('data-day');
+            const timeSlot = element.getAttribute('data-slot');
+            const value = element.value.trim();
+
+            if (!currentRoutineData[day]) {
+                currentRoutineData[day] = {};
+            }
+            currentRoutineData[day][timeSlot] = value;
+            
+            // Save the entire current state to Firestore on every input change
+            saveRoutineToFirestore(currentRoutineData);
+        }
+        
+        /**
+         * Automatically adjusts the height of the textarea to fit its content.
+         * @param {HTMLTextAreaElement} element - The textarea element.
+         */
+        function autoExpand(element) {
+            element.style.height = 'auto';
+            element.style.height = (element.scrollHeight) + 'px';
+        }
+
+        // --- 4. PDF Download Function ---
+
+        function downloadRoutineAsPDF() {
+            const element = document.getElementById('pdf-content-wrapper');
+            const appHeader = document.getElementById('app-header');
+            const pdfHeaderPlaceholder = document.getElementById('pdf-header-placeholder');
+            
+            // 1. Prepare PDF Header (visible only during export)
+            appHeader.style.display = 'none'; 
+            pdfHeaderPlaceholder.classList.remove('hidden');
+
+            // 2. Temporarily replace textareas with plain text for clean PDF output
+            const textareas = document.querySelectorAll('.editable-input');
+            const originalContents = [];
+            textareas.forEach(ta => {
+                originalContents.push({ 
+                    parent: ta.parentNode, 
+                    value: ta.value,
+                    day: ta.getAttribute('data-day'),
+                    slot: ta.getAttribute('data-slot')
+                });
+                
+                const textDiv = document.createElement('div');
+                textDiv.className = 'py-2 px-1 font-medium text-gray-800 text-center text-sm break-words whitespace-pre-wrap'; 
+                textDiv.textContent = ta.value;
+
+                ta.parentNode.replaceChild(textDiv, ta);
+            });
+
+            // 3. Configuration for the PDF export (using landscape format)
+            const options = {
+                margin: 10,
+                filename: 'ULAB_Course_Routine_' + (currentRoutineId || 'unknown') + '.pdf',
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2, logging: false, useCORS: true },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
+            };
+
+            // 4. Generate the PDF
+            html2pdf().set(options).from(element).save().then(() => {
+                // 5. Restore the UI after PDF generation
+                appHeader.style.display = 'block';
+                pdfHeaderPlaceholder.classList.add('hidden');
+
+                // Restore the original textareas and content
+                originalContents.forEach(item => {
+                    const newTa = document.createElement('textarea');
+                    newTa.className = 'editable-input';
+                    newTa.setAttribute('data-day', item.day);
+                    newTa.setAttribute('data-slot', item.slot);
+                    newTa.setAttribute('placeholder', "Course Code, Section, Faculty");
+                    newTa.setAttribute('oninput', "autoExpand(this); handleInput(this);");
+                    // Re-apply readonly style if in shared/view mode
+                    if (currentRoutineId !== userId) {
+                         newTa.setAttribute('readonly', '');
+                         newTa.style.cssText = "background-color: #f7f9fb; cursor: default;";
+                    }
+                    newTa.value = item.value;
+
+                    // The temporary div is always the first child now.
+                    item.parent.replaceChild(newTa, item.parent.firstChild);
+                    autoExpand(newTa);
+                });
+            });
+        }
+
+
+        // --- 5. Initialization ---
+
+        window.onload = async () => {
+            renderTable({}); 
+            
+            await initializeFirebase();
+
+            window.autoExpand = autoExpand;
+            window.handleInput = handleInput;
+
+            document.getElementById('clear-button').addEventListener('click', clearRoutine);
+            document.getElementById('download-button').addEventListener('click', downloadRoutineAsPDF);
+            document.getElementById('share-button').addEventListener('click', showShareModal);
+        };
+    </script>
+
+</body>
+</html>
