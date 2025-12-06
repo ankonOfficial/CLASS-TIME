@@ -1,10 +1,149 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <meta http-equiv="refresh" content="0; URL=5th.html" />
-    <title>Redirecting...</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Loading 3D Experience</title>
+    <!-- Load Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Load Three.js for 3D rendering -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <style>
+        /* Custom CSS for a dark, centered, full-screen layout */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0d1117; /* Dark background */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+            flex-direction: column;
+        }
+        #loading-container {
+            position: relative;
+            width: 100%;
+            height: 60vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        #three-canvas {
+            display: block;
+        }
+        .loading-text {
+            color: #89b4f8; /* Light blue/purple color */
+            font-weight: 600;
+            letter-spacing: 0.1em;
+            text-shadow: 0 0 5px rgba(137, 180, 248, 0.4);
+        }
+    </style>
 </head>
 <body>
-    <p>If you are not redirected automatically, <a href="5th.html">click here</a>.</p>
+
+    <div id="loading-container">
+        <canvas id="three-canvas"></canvas>
+    </div>
+
+    <p id="progress-text" class="loading-text text-xl mt-8 animate-pulse">Loading Assets...</p>
+
+    <script>
+        // --- 1. FIREBASE REDIRECT LOGIC ---
+        // This script will run after 5 seconds, simulating a professional asset loading time.
+        const REDIRECT_DELAY_MS = 5000;
+        const TARGET_URL = "6th.html";
+
+        function startRedirectTimer() {
+            setTimeout(() => {
+                const progressText = document.getElementById('progress-text');
+                progressText.textContent = "Redirecting...";
+                // Redirect the user to the target page
+                window.location.href = TARGET_URL;
+            }, REDIRECT_DELAY_MS);
+        }
+
+        // --- 2. THREE.JS 3D ANIMATION SETUP ---
+
+        let scene, camera, renderer, octahedron;
+
+        function init3D() {
+            const container = document.getElementById('loading-container');
+            const canvas = document.getElementById('three-canvas');
+            
+            // Scene Setup
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x0d1117); // Match body background
+
+            // Camera Setup (Perspective Camera)
+            camera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.1, 1000);
+            camera.position.z = 3;
+
+            // Renderer Setup
+            renderer = new THREE.WebGLRenderer({ 
+                canvas: canvas, 
+                antialias: true,
+                alpha: true // Allow for transparent background if needed
+            });
+            renderer.setSize(container.clientWidth, container.clientHeight);
+
+            // Resizing handler
+            window.addEventListener('resize', onWindowResize, false);
+            function onWindowResize() {
+                const newWidth = container.clientWidth;
+                const newHeight = container.clientHeight;
+                camera.aspect = newWidth / newHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(newWidth, newHeight);
+            }
+            onWindowResize(); // Initial size setting
+
+            // Lighting: Subtle ambient light
+            const ambientLight = new THREE.AmbientLight(0x404040, 5); // soft white light
+            scene.add(ambientLight);
+
+            // Lighting: Directional light for shadows/specular highlights
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 3);
+            directionalLight.position.set(5, 5, 5);
+            scene.add(directionalLight);
+
+            // The 3D Object (Octahedron for a stylized loading 'gem')
+            const geometry = new THREE.OctahedronGeometry(1.0); // Radius 1.0
+            
+            // Professional material: Metallic/Glossy look
+            const material = new THREE.MeshPhysicalMaterial({
+                color: 0x6e35ff, // A vibrant purple/blue
+                metalness: 0.8,
+                roughness: 0.2,
+                clearcoat: 1.0,
+                clearcoatRoughness: 0.1
+            });
+            
+            octahedron = new THREE.Mesh(geometry, material);
+            scene.add(octahedron);
+        }
+
+        // Animation Loop
+        function animate() {
+            requestAnimationFrame(animate);
+
+            // Rotate the object for the animation effect
+            if (octahedron) {
+                octahedron.rotation.x += 0.005;
+                octahedron.rotation.y += 0.01;
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        // Initialize and start the animation and the redirect timer
+        window.onload = function() {
+            init3D();
+            animate();
+            startRedirectTimer();
+        };
+
+    </script>
+
 </body>
 </html>
