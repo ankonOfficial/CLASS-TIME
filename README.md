@@ -21,5 +21,5 @@ For direct access to specific semester routines, use the links below:
 
 If you have any questions or feedback, please feel free to reach out!
 
-* **My Website:** [https://ankondasgourab.netlify.app/](https://ankondasgourab.netlify.app/)
+* **My Website:** [https://ankon.me/](https://ankon.me)
 * **Message Me Directly:** [https://ankondasgourab.netlify.app/messages](https://ankondasgourab.netlify.app/messages)
