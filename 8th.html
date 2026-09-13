@@ -428,6 +428,35 @@
             transition: color 0.3s ease;
         }
 
+        /* Connect / Social Links */
+        .connect-links {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.9rem;
+        }
+        .connect-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.25rem;
+            border-radius: 0.75rem;
+            font-weight: 700;
+            font-size: 0.95rem;
+            text-decoration: none;
+            color: #ffffff;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+        }
+        .connect-badge:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 18px rgba(0, 0, 0, 0.25);
+            opacity: 0.92;
+        }
+        .connect-badge.github { background: #24292e; }
+        .connect-badge.linkedin { background: #0a66c2; }
+        .connect-badge.website { background: var(--header-bg-light); }
+        body.dark-mode .connect-badge.website { background: var(--header-bg-dark); }
+
         .schedule-footer {
             background-color: var(--footer-bg);
             color: var(--footer-text);
@@ -756,6 +785,25 @@
                         </div>
                     </div>
                 </section>
+
+                <section class="mt-10">
+                    <h2 class="section-heading">Connect With Me</h2>
+                    <div class="connect-links">
+                        <a href="https://github.com/ankonOfficial" target="_blank" rel="noopener" class="connect-badge github">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 .5C5.73.5.5 5.73.5 12c0 5.08 3.29 9.39 7.86 10.91.57.1.78-.25.78-.55 0-.27-.01-1.16-.02-2.11-3.2.7-3.88-1.36-3.88-1.36-.52-1.33-1.28-1.68-1.28-1.68-1.04-.71.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.76 2.71 1.25 3.37.96.1-.75.4-1.25.73-1.54-2.55-.29-5.23-1.28-5.23-5.68 0-1.25.45-2.28 1.19-3.08-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.18 1.18a11.1 11.1 0 012.9-.39c.98 0 1.97.13 2.9.39 2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.24 2.76.12 3.05.74.8 1.19 1.83 1.19 3.08 0 4.41-2.69 5.38-5.25 5.67.41.36.78 1.06.78 2.14 0 1.54-.01 2.79-.01 3.17 0 .3.2.66.79.55A10.52 10.52 0 0023.5 12C23.5 5.73 18.27.5 12 .5z"/></svg>
+                            GitHub
+                        </a>
+                        <a href="#" target="_blank" rel="noopener" class="connect-badge linkedin">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M20.45 20.45h-3.55v-5.57c0-1.33-.02-3.04-1.85-3.04-1.86 0-2.15 1.45-2.15 2.94v5.67H9.35V9h3.41v1.56h.05c.47-.9 1.63-1.85 3.36-1.85 3.6 0 4.27 2.37 4.27 5.45v6.29zM5.34 7.43a2.06 2.06 0 11.01-4.12 2.06 2.06 0 01-.01 4.12zM7.12 20.45H3.56V9h3.56v11.45zM22.22 0H1.77C.79 0 0 .77 0 1.72v20.56C0 23.23.79 24 1.77 24h20.45c.98 0 1.78-.77 1.78-1.72V1.72C24 .77 23.2 0 22.22 0z"/></svg>
+                            LinkedIn
+                        </a>
+                        <a href="https://ankon.me" target="_blank" rel="noopener" class="connect-badge website">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 010 20M12 2a15.3 15.3 0 000 20"/></svg>
+                            ankon.me
+                        </a>
+                    </div>
+                    <p class="text-sm text-gray-500 mt-3">*I guessed your GitHub as github.com/ankonOfficial from your browser tab in the screenshot — let me know if that's wrong. The LinkedIn button is a placeholder (href="#") since I don't have that link yet.</p>
+                </section>
             </main>
 
             <footer class="schedule-footer">
@@ -923,19 +971,87 @@
             }
 
             window.downloadPDF = function() {
-                const element = document.querySelector('.schedule-table-wrapper');
-                element.classList.add('pdf-bw-mode');
+                // html2canvas doesn't reliably capture <td rowspan> cells - it was
+                // rendering the merged Course ID / Course Name / Section text cut
+                // in half. Fix: build a flat, rowspan-free copy of the table just
+                // for the PDF snapshot, using plain black-on-white inline styles.
+                const sourceTable = document.querySelector('.schedule-table');
+                const headerCells = Array.from(sourceTable.querySelectorAll('thead th')).map(th => th.innerText.trim());
+                const bodyRows = Array.from(sourceTable.querySelectorAll('tbody tr'));
+
+                const flatRows = [];
+                bodyRows.forEach(row => {
+                    const cells = Array.from(row.children);
+                    const isNewCourse = cells[0].hasAttribute('rowspan');
+                    let idx = 0;
+                    let courseId = '', courseName = '', section = '';
+                    if (isNewCourse) {
+                        courseId = cells[0].innerText.trim();
+                        courseName = cells[1].innerText.trim();
+                        section = cells[2].innerText.trim();
+                        idx = 3;
+                    }
+                    flatRows.push({
+                        isNewCourse,
+                        courseId,
+                        courseName,
+                        section,
+                        day: cells[idx].innerText.trim(),
+                        time: cells[idx + 1].innerText.trim(),
+                        room: cells[idx + 2].innerText.trim(),
+                        link: cells[idx + 3] ? cells[idx + 3].innerText.trim() : ''
+                    });
+                });
+
+                const cellStyle = 'padding:8px 10px; border:1px solid #000; font-size:12px; color:#000;';
+                let tableHTML = '<table style="width:100%; border-collapse:collapse; font-family:Arial, sans-serif;">';
+                tableHTML += '<thead><tr style="background:#e9ecef;">';
+                headerCells.forEach(h => {
+                    tableHTML += `<th style="${cellStyle} font-weight:700; text-align:left;">${h}</th>`;
+                });
+                tableHTML += '</tr></thead><tbody>';
+                flatRows.forEach(r => {
+                    const noTop = r.isNewCourse ? '' : 'border-top:none;';
+                    tableHTML += '<tr style="background:#ffffff;">';
+                    tableHTML += `<td style="${cellStyle} ${noTop} font-weight:700;">${r.courseId}</td>`;
+                    tableHTML += `<td style="${cellStyle} ${noTop}">${r.courseName}</td>`;
+                    tableHTML += `<td style="${cellStyle} ${noTop} text-align:center;">${r.section}</td>`;
+                    tableHTML += `<td style="${cellStyle}">${r.day}</td>`;
+                    tableHTML += `<td style="${cellStyle}">${r.time}</td>`;
+                    tableHTML += `<td style="${cellStyle}">${r.room}</td>`;
+                    tableHTML += `<td style="${cellStyle}">${r.link}</td>`;
+                    tableHTML += '</tr>';
+                });
+                tableHTML += '</tbody></table>';
+
+                const pdfContainer = document.createElement('div');
+                pdfContainer.style.position = 'fixed';
+                pdfContainer.style.left = '-99999px';
+                pdfContainer.style.top = '0';
+                pdfContainer.style.background = '#ffffff';
+                pdfContainer.style.padding = '20px';
+                pdfContainer.style.width = '1150px';
+
+                pdfContainer.innerHTML = `
+                    <h1 style="font-family:Arial, sans-serif; font-size:22px; margin:0 0 4px; color:#000;">Class Schedule</h1>
+                    <p style="font-family:Arial, sans-serif; font-size:13px; margin:0 0 16px; color:#333;">Semester: 271 (Fall 2026) | Student: 242014040 Ankon Das</p>
+                    ${tableHTML}
+                    <p style="font-family:Arial, sans-serif; font-size:11px; margin:16px 0 0; color:#333;">
+                        GitHub: github.com/ankonOfficial &nbsp;|&nbsp; Website: ankon.me
+                    </p>
+                `;
+                document.body.appendChild(pdfContainer);
 
                 const opt = {
                     margin:       10,
                     filename:     'fall-2026-schedule.pdf',
                     image:        { type: 'jpeg', quality: 0.98 },
-                    html2canvas:  { scale: 2 },
+                    html2canvas:  { scale: 2, backgroundColor: '#ffffff' },
                     jsPDF:        { unit: 'mm', format: 'a4', orientation: 'landscape' }
                 };
 
-                html2pdf().set(opt).from(element).save().then(() => {
-                    element.classList.remove('pdf-bw-mode');
+                html2pdf().set(opt).from(pdfContainer).save().then(() => {
+                    document.body.removeChild(pdfContainer);
                 });
             };
 
